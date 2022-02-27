@@ -1,6 +1,6 @@
-import { toTexast, Options } from 'jast-util-to-texast'
-import { Root as JastRoot } from 'jjast'
-import { Root as TexastRoot } from 'texast'
+import { toJast, Options } from 'ooxast-util-to-jast'
+import { Root as JastRoot } from 'jast-types'
+import { Root as OoxastRoot } from 'ooxast'
 import {
   Plugin,
   Processor as UnifiedProcessor,
@@ -18,12 +18,18 @@ type Processor = UnifiedProcessor<any, any, any, any>
 function bridge(
   destination: Processor,
   options?: Options
-): void | Transformer<JastRoot, JastRoot> {
+): void | Transformer<OoxastRoot, OoxastRoot> {
   return (node, file, next) => {
-    //@ts-ignore there should be a better way to cast this
-    destination.run(toTexast(node, options), file, (error) => {
-      next(error)
-    })
+    destination.run(
+      toJast(node, {
+        ...options,
+        relations: (file.data.relations || {}) as { [key: string]: string },
+      }),
+      file,
+      (error) => {
+        next(error)
+      }
+    )
   }
 }
 
@@ -33,12 +39,15 @@ function bridge(
  */
 function mutate(
   options: void | Options | undefined = {}
-): ReturnType<Plugin<[Options?] | void[], JastRoot, TexastRoot>> {
-  //Transformer<JastRoot, JastRoot> | void {
-  return (node) => {
-    // TODO: [rejour-relatex] Cast JastRoot to TexastRoot better
-    //@ts-ignore there should be a better way to cast this
-    const result = toTexast(node, options) as TexastRoot
+): ReturnType<Plugin<[Options?] | void[], OoxastRoot, OoxastRoot>> {
+  //Transformer<OoxastRoot, OoxastRoot> | void {
+  //@ts-expect-error there should be a better way to cast this
+  //THIS IS FINE
+  return (node, file) => {
+    const result = toJast(node, {
+      ...options,
+      relations: (file.data.relations || {}) as { [key: string]: string },
+    }) as JastRoot
     return result
   }
 }
@@ -56,10 +65,14 @@ function mutate(
  * @param options
  *   Options passed to `jast-util-to-texast`.
  */
-const rejourRelatex = function (
+const reoffRejour = function (
   destination?: Processor | Options,
   options?: Options
 ) {
+  const relations = this.data('relations')
+  const data = this.data()
+
+  // console.log(data)
   let settings: Options | undefined
   let processor: Processor | undefined
 
@@ -73,9 +86,13 @@ const rejourRelatex = function (
   if (settings?.document === undefined || settings.document === null) {
     settings = Object.assign({}, settings, { document: true })
   }
+  // console.log(relations)
+  if (relations) {
+    settings = Object.assign({}, settings, { relations })
+  }
 
   return processor ? bridge(processor, settings) : mutate(settings)
-} as Plugin<[Processor, Options?], JastRoot> &
-  Plugin<[Options?] | void[], JastRoot, TexastRoot>
+} as Plugin<[Processor, Options?], OoxastRoot> &
+  Plugin<[Options?] | void[], OoxastRoot, JastRoot>
 
-export default rejourRelatex
+export default reoffRejour
