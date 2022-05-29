@@ -1,3 +1,4 @@
+/* eslint-disable */
 const config = {
   displayName: 'reoff-rejour',
   preset: '../../../jest.preset.js',
@@ -9,14 +10,14 @@ const config = {
   },
   testEnvironment: 'node',
   transform: {
-    '^.+\.[tj]sx?$': 'ts-jest',
+    '^.+.[tj]sx?$': 'ts-jest',
   },
   transformIgnorePatterns: [],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   coverageDirectory: '../../../coverage/libs/reoff-rejour',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
-    '^(\.{1,2}/.*)\.js$': '$1',
+    '^(.{1,2}/.*).js$': '$1',
   },
 }
 
